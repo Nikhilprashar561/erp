@@ -494,10 +494,6 @@ td {
   display: none !important;
 }
 
-.ss-hide-mobile {
-  display: block !important;
-}
-
 @media (max-width: 768px) {
   .ss-sidebar-desktop {
     display: none !important;

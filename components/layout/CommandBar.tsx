@@ -50,12 +50,69 @@ export default function CommandBar() {
       </div>
 
       {/* Search (Desktop only) */}
-      <div className="ss-hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '9px', height: '32px', flex: 1, maxWidth: '440px', padding: '0 12px', background: '#111113', border: '1px solid #242428', borderRadius: '7px', cursor: 'text', color: '#8A9099' }}>
-        <Icon name="search" color="#8A9099" size={14} />
-        <span style={{ fontSize: '13px' }}>Search orders, clients, invoices, batches…</span>
-        <span style={{ marginLeft: 'auto', display: 'flex', gap: '3px' }}>
-          <kbd style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '11px', background: '#18181C', border: '1px solid #242428', borderRadius: '4px', padding: '1px 5px', color: '#8A9099' }}>⌘</kbd>
-          <kbd style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '11px', background: '#18181C', border: '1px solid #242428', borderRadius: '4px', padding: '1px 5px', color: '#8A9099' }}>K</kbd>
+      <div
+        className="ss-hide-mobile"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '9px',
+          height: '32px',
+          flex: 1,
+          maxWidth: '440px',
+          minWidth: '240px',
+          padding: '0 12px',
+          background: '#111113',
+          border: '1px solid #242428',
+          borderRadius: '7px',
+          cursor: 'text',
+          color: '#8A9099',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <Icon name="search" color="#8A9099" size={14} />
+        </span>
+        <span
+          style={{
+            fontSize: '13px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flex: 1,
+          }}
+        >
+          Search orders, clients, invoices, batches…
+        </span>
+        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+          <kbd
+            style={{
+              fontFamily: "'JetBrains Mono',monospace",
+              fontSize: '11px',
+              background: '#18181C',
+              border: '1px solid #242428',
+              borderRadius: '4px',
+              padding: '1px 5px',
+              color: '#8A9099',
+              lineHeight: '16px',
+            }}
+          >
+            ⌘
+          </kbd>
+          <kbd
+            style={{
+              fontFamily: "'JetBrains Mono',monospace",
+              fontSize: '11px',
+              background: '#18181C',
+              border: '1px solid #242428',
+              borderRadius: '4px',
+              padding: '1px 5px',
+              color: '#8A9099',
+              lineHeight: '16px',
+            }}
+          >
+            K
+          </kbd>
         </span>
       </div>
 
