@@ -21,6 +21,7 @@ const filterLabels: Record<string, string> = {
 export default function OrdersPage() {
   const { orders, orderFilter, setOrderFilter, fetchOrders, isLoading } = useOrderStore();
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchOrders();
@@ -31,7 +32,16 @@ export default function OrdersPage() {
     counts[k] = orders.filter((o) => o.status === k).length;
   });
 
-  const visible = orders.filter((o) => orderFilter === 'all' || o.status === orderFilter);
+  const q = searchQuery.toLowerCase().trim();
+  const visible = orders.filter((o) => {
+    const matchesFilter = orderFilter === 'all' || o.status === orderFilter;
+    const matchesQuery =
+      !q ||
+      o.no.toLowerCase().includes(q) ||
+      o.client.toLowerCase().includes(q) ||
+      o.products.toLowerCase().includes(q);
+    return matchesFilter && matchesQuery;
+  });
   const th = {
     textAlign: 'left' as const,
     padding: '11px 16px',
@@ -88,38 +98,58 @@ export default function OrdersPage() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
-        {filterDefs.map((f) => {
-          const active = orderFilter === f;
-          return (
-            <button
-              key={f}
-              onClick={() => setOrderFilter(f)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '7px',
-                height: '28px',
-                padding: '0 12px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 500,
-                whiteSpace: 'nowrap',
-                border: '1px solid',
-                borderColor: active ? '#33333a' : '#1C1C20',
-                background: active ? '#18181C' : 'transparent',
-                color: active ? '#E2E8ED' : '#8A9099',
-              }}
-            >
-              {filterLabels[f]}{' '}
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '11px', color: '#8A9099' }}>
-                {counts[f] || 0}
-              </span>
-            </button>
-          );
-        })}
+      {/* Filters & Search */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {filterDefs.map((f) => {
+            const active = orderFilter === f;
+            return (
+              <button
+                key={f}
+                onClick={() => setOrderFilter(f)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '7px',
+                  height: '28px',
+                  padding: '0 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  border: '1px solid',
+                  borderColor: active ? '#33333a' : '#1C1C20',
+                  background: active ? '#18181C' : 'transparent',
+                  color: active ? '#E2E8ED' : '#8A9099',
+                }}
+              >
+                {filterLabels[f]}{' '}
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '11px', color: '#8A9099' }}>
+                  {counts[f] || 0}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ minWidth: '220px' }}>
+          <input
+            type="text"
+            placeholder="Search order no, client, item..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              background: '#111113',
+              border: '1px solid #242428',
+              borderRadius: '6px',
+              padding: '5px 12px',
+              fontSize: '12px',
+              color: '#E2E8ED',
+              outline: 'none',
+            }}
+          />
+        </div>
       </div>
 
       {/* Orders Table */}

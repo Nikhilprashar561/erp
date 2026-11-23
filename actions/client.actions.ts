@@ -33,6 +33,7 @@ export async function getClientsAction() {
       city: c.city,
       gst: c.gstNumber,
       init: c.initials,
+      phone: c.phone || undefined,
       last: c.lastActiveDate || 'Recent',
       silverOut: Number(c.silverOutstanding),
       inrOut: Number(c.inrOutstanding),

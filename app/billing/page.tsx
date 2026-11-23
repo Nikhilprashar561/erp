@@ -4,6 +4,7 @@ import { useBillingStore, type InvoiceModel } from '@/stores/useBillingStore';
 import { useUIStore } from '@/stores/useUIStore';
 import { fmtGn, fmtINRn } from '@/lib/formatters';
 import NewInvoiceModal from '@/components/billing/NewInvoiceModal';
+import PrintTaxInvoice from '@/components/billing/PrintTaxInvoice';
 
 export default function BillingPage() {
   const {
@@ -366,20 +367,26 @@ export default function BillingPage() {
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 onClick={() => showToast(`Invoice ${selectedInvoice.no} sent to ${selectedInvoice.client}`)}
-                style={{ flex: 1, height: '36px', background: '#C8D0D8', color: '#0A0A0B', border: 'none', borderRadius: '7px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ flex: 1, height: '36px', background: '#C8D0D8', color: '#0A0A0B', border: 'none', borderRadius: '7px', fontWeight: 600, cursor: 'pointer', fontSize: '12px' }}
               >
                 Send Invoice
               </button>
               <button
-                onClick={() => showToast(`Invoice ${selectedInvoice.no} downloaded as PDF`)}
-                style={{ flex: 1, height: '36px', background: 'transparent', color: '#C8D0D8', border: '1px solid #242428', borderRadius: '7px', fontWeight: 500, cursor: 'pointer' }}
+                onClick={() => {
+                  showToast(`Opening Print / Save as PDF for ${selectedInvoice.no}`);
+                  window.print();
+                }}
+                style={{ flex: 1, height: '36px', background: 'transparent', color: '#C8D0D8', border: '1px solid #242428', borderRadius: '7px', fontWeight: 500, cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                Download PDF
+                🖨️ Print Tax Invoice
               </button>
             </div>
           </div>
         </>
       )}
+
+      {/* Hidden Print Container for Official A4 Tax Invoice */}
+      <PrintTaxInvoice invoice={selectedInvoice} />
 
       {/* New Invoice Modal */}
       <NewInvoiceModal

@@ -594,3 +594,45 @@ td {
     grid-template-columns: 1fr;
   }
 }
+
+/* Print Media Styles for Invoices and Work Orders */
+@media screen {
+  .ss-print-only {
+    display: none !important;
+  }
+}
+
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  .ss-commandbar,
+  .ss-sidebar,
+  .ss-hide-print,
+  .ss-page,
+  header,
+  nav,
+  aside,
+  button {
+    display: none !important;
+  }
+
+  .ss-print-only {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: #FFFFFF !important;
+    color: #111111 !important;
+    padding: 16px 24px !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm 12mm 12mm 12mm;
+  }
+}

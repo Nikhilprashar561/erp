@@ -180,6 +180,51 @@ export default function OrderDetailClient({ id }: OrderDetailClientProps) {
 
           <button
             onClick={() => {
+              router.push(`/production?order=${od.no}`);
+              showToast(`Order ${od.no} routed to Production batch pipeline`);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              height: '32px',
+              padding: '0 12px',
+              background: '#1F1F24',
+              color: '#E2E8ED',
+              border: '1px solid #33333a',
+              borderRadius: '6px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontSize: '12px',
+            }}
+          >
+            ⚙ Send to Production
+          </button>
+
+          <button
+            onClick={() => {
+              window.print();
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              height: '32px',
+              padding: '0 12px',
+              background: '#141418',
+              color: '#8A9099',
+              border: '1px solid #242428',
+              borderRadius: '6px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontSize: '12px',
+            }}
+          >
+            Print Job Card
+          </button>
+
+          <button
+            onClick={() => {
               router.push('/billing');
               showToast(`Invoice draft for ${od.no} loaded in Billing`);
             }}

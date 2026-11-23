@@ -9,6 +9,7 @@ export interface ClientModel {
   city: string;
   gst: string;
   init: string;
+  phone?: string;
   last: string;
   silverOut: number;
   inrOut: number;

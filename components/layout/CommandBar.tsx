@@ -1,20 +1,40 @@
 'use client';
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store/AppContext';
+import { useDashboardStore } from '@/stores/useDashboardStore';
 import Icon from '@/components/ui/Icon';
+import CommandPalette from '@/components/layout/CommandPalette';
+import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
 
 export default function CommandBar() {
   const { rate, clock, newMenuOpen, toggleNewMenu, closeNewMenu, showToast, toggleMobileSidebar } = useApp();
+  const { metrics } = useDashboardStore();
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const activeAlertsCount = metrics?.alerts?.length || 4;
 
   const rateBase = 89000;
   const rateColor = rate >= rateBase ? '#4ADE80' : '#F87171';
   const delta = ((rate - rateBase) / rateBase) * 100;
   const rateDeltaStr = (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(2) + '%';
   const rateStr = '₹ ' + rate.toLocaleString('en-IN');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -52,6 +72,7 @@ export default function CommandBar() {
       {/* Search (Desktop only) */}
       <div
         className="ss-hide-mobile"
+        onClick={() => setPaletteOpen(true)}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -64,11 +85,14 @@ export default function CommandBar() {
           background: '#111113',
           border: '1px solid #242428',
           borderRadius: '7px',
-          cursor: 'text',
+          cursor: 'pointer',
           color: '#8A9099',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
+          transition: 'border-color 0.15s ease',
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#33333a')}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#242428')}
       >
         <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           <Icon name="search" color="#8A9099" size={14} />
@@ -153,10 +177,53 @@ export default function CommandBar() {
       <div style={{ width: '12px' }} />
 
       {/* Notifications */}
-      <div style={{ position: 'relative', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111113', border: '1px solid #242428', borderRadius: '7px', cursor: 'pointer' }}>
-        <Icon name="bell" color="#C8D0D8" size={15} />
-        <div style={{ position: 'absolute', top: '-3px', right: '-3px', minWidth: '15px', height: '15px', padding: '0 3px', background: '#8A2020', border: '1.5px solid #0A0A0B', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'JetBrains Mono',monospace", fontSize: '9px', fontWeight: 600, color: '#F87171' }}>7</div>
+      <div style={{ position: 'relative' }}>
+        <div
+          onClick={() => setNotificationsOpen((prev) => !prev)}
+          style={{
+            position: 'relative',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: notificationsOpen ? '#18181C' : '#111113',
+            border: `1px solid ${notificationsOpen ? '#33333a' : '#242428'}`,
+            borderRadius: '7px',
+            cursor: 'pointer',
+          }}
+        >
+          <Icon name="bell" color="#C8D0D8" size={15} />
+          {activeAlertsCount > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-3px',
+                right: '-3px',
+                minWidth: '15px',
+                height: '15px',
+                padding: '0 3px',
+                background: '#8A2020',
+                border: '1.5px solid #0A0A0B',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: "'JetBrains Mono',monospace",
+                fontSize: '9px',
+                fontWeight: 600,
+                color: '#F87171',
+              }}
+            >
+              {activeAlertsCount}
+            </div>
+          )}
+        </div>
+        <NotificationsDropdown isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
       </div>
+
+      {/* Command Palette Modal */}
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
 
       <div style={{ width: '10px' }} />
 

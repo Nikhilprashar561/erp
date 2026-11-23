@@ -18,6 +18,8 @@ export default function InventoryPage() {
 
   const [isAddSkuOpen, setIsAddSkuOpen] = useState(false);
   const [isAuditing, setIsAuditing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [catFilter, setCatFilter] = useState<'all' | 'fg' | 'raw' | 'low'>('all');
 
   useEffect(() => {
     fetchInventory();
@@ -30,6 +32,24 @@ export default function InventoryPage() {
   // Valuation based on live MCX rate
   const stockValuationINR = (totalFine / 1000) * (rate || 89000);
   const lowSkuCount = items.filter((i) => i.status === 'low' || i.status === 'reorder').length;
+
+  const q = searchQuery.toLowerCase().trim();
+  const visibleItems = items.filter((it) => {
+    const isRaw = it.cat.toLowerCase().includes('raw');
+    const isLow = it.status === 'low' || it.status === 'reorder';
+    if (catFilter === 'fg' && isRaw) return false;
+    if (catFilter === 'raw' && !isRaw) return false;
+    if (catFilter === 'low' && !isLow) return false;
+
+    if (q) {
+      return (
+        it.sku.toLowerCase().includes(q) ||
+        it.cat.toLowerCase().includes(q) ||
+        it.loc.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
   const cards = [
     { label: 'Total Fine Silver', amt: fmtGn(totalFine) + ' g', accent: '#F0F2F4' },
@@ -162,6 +182,61 @@ export default function InventoryPage() {
         ))}
       </div>
 
+      {/* Filters & Search Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '16px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'all', label: `All (${items.length})` },
+            { id: 'fg', label: `Finished Goods (${items.filter((i) => !i.cat.toLowerCase().includes('raw')).length})` },
+            { id: 'raw', label: `Raw Silver (${items.filter((i) => i.cat.toLowerCase().includes('raw')).length})` },
+            { id: 'low', label: `Low Stock (${lowSkuCount})` },
+          ].map((f) => {
+            const active = catFilter === f.id;
+            return (
+              <button
+                key={f.id}
+                onClick={() => setCatFilter(f.id as any)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  height: '28px',
+                  padding: '0 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  border: '1px solid',
+                  borderColor: active ? '#33333a' : '#1C1C20',
+                  background: active ? '#18181C' : 'transparent',
+                  color: active ? '#E2E8ED' : '#8A9099',
+                }}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ minWidth: '220px' }}>
+          <input
+            type="text"
+            placeholder="Search SKU, category, vault..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              background: '#111113',
+              border: '1px solid #242428',
+              borderRadius: '6px',
+              padding: '5px 12px',
+              fontSize: '12px',
+              color: '#E2E8ED',
+              outline: 'none',
+            }}
+          />
+        </div>
+      </div>
+
       {/* SKU Table */}
       <div style={{ background: '#111113', border: '1px solid #242428', borderRadius: '8px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
@@ -179,14 +254,14 @@ export default function InventoryPage() {
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 ? (
+              {visibleItems.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: '#8A9099' }}>
-                    {isLoading ? 'Loading stock data...' : 'No inventory SKUs registered.'}
+                    {isLoading ? 'Loading stock data...' : 'No inventory SKUs matching filter.'}
                   </td>
                 </tr>
               ) : (
-                items.map((it, i) => {
+                visibleItems.map((it, i) => {
                   const s = invStatus[it.status] || invStatus.in;
                   return (
                     <tr
