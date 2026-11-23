@@ -30,6 +30,8 @@ async function main() {
     { code: 'BCH', name: 'Bichiya (Toe Ring)', description: 'Toe ornament' },
     { code: 'PND', name: 'Pendant', description: 'Neck pendant' },
     { code: 'ANK', name: 'Anklet', description: 'Ankle ornament' },
+    { code: 'RAW', name: 'Raw Silver', description: 'Pure 99.9 Bullion & Bars' },
+    { code: 'BNG', name: 'Bangle', description: 'Hand ornaments' },
   ];
 
   for (const cat of categories) {
@@ -291,6 +293,72 @@ async function main() {
   await prisma.silverLocation.deleteMany();
   for (const loc of silverLocationsData) {
     await prisma.silverLocation.create({ data: loc });
+  }
+
+  // 11. Inventory Items
+  const catMap = new Map<string, string>();
+  const allCats = await prisma.masterCategory.findMany();
+  allCats.forEach(c => catMap.set(c.code, c.id));
+
+  const purMap = new Map<string, string>();
+  const allPurs = await prisma.masterPurity.findMany();
+  allPurs.forEach(p => purMap.set(p.code, p.id));
+
+  const inventoryData = [
+    { sku: 'PYL-925-018', catCode: 'PYL', purCode: '925', pieces: 18, gross: 1240.500, fine: 1147.463, loc: 'Vault A', status: InventoryStatus.IN_STOCK },
+    { sku: 'KAD-925-012', catCode: 'KAD', purCode: '925', pieces: 12, gross: 880.000, fine: 814.000, loc: 'Vault A', status: InventoryStatus.IN_STOCK },
+    { sku: 'CHN-999-040', catCode: 'CHN', purCode: '999', pieces: 40, gross: 520.000, fine: 519.480, loc: 'Vault B', status: InventoryStatus.LOW },
+    { sku: 'ANK-925-008', catCode: 'ANK', purCode: '925', pieces: 8, gross: 640.000, fine: 592.000, loc: 'Display', status: InventoryStatus.IN_STOCK },
+    { sku: 'PND-925-024', catCode: 'PND', purCode: '925', pieces: 24, gross: 420.000, fine: 388.500, loc: 'Vault B', status: InventoryStatus.IN_STOCK },
+    { sku: 'RAW-999-BAR', catCode: 'RAW', purCode: '999', pieces: 1, gross: 2100.000, fine: 2097.900, loc: 'Vault A', status: InventoryStatus.REORDER },
+    { sku: 'TOE-925-050', catCode: 'BCH', purCode: '925', pieces: 50, gross: 380.000, fine: 351.500, loc: 'Display', status: InventoryStatus.LOW },
+    { sku: 'BNG-925-020', catCode: 'BNG', purCode: '925', pieces: 20, gross: 1180.000, fine: 1091.500, loc: 'Vault A', status: InventoryStatus.IN_STOCK },
+  ];
+
+  for (const inv of inventoryData) {
+    const categoryId = catMap.get(inv.catCode);
+    const purityId = purMap.get(inv.purCode);
+    if (!categoryId || !purityId) continue;
+
+    await prisma.inventoryItem.upsert({
+      where: { sku: inv.sku },
+      update: {
+        categoryId,
+        purityId,
+        pieces: inv.pieces,
+        grossWeight: inv.gross,
+        fineWeight: inv.fine,
+        location: inv.loc,
+        status: inv.status,
+      },
+      create: {
+        sku: inv.sku,
+        categoryId,
+        purityId,
+        pieces: inv.pieces,
+        grossWeight: inv.gross,
+        fineWeight: inv.fine,
+        location: inv.loc,
+        status: inv.status,
+      },
+    });
+  }
+
+  // 12. Material Movements
+  const movementsData = [
+    { dateDisplay: '14 Jun · 12:18', movementType: MovementType.RECEIPT, fromLocation: 'Mehta Jewels', toLocation: 'Vault A', referenceNo: 'ORD-2241', fineWeight: 450.000, createdByName: 'R. Kothari' },
+    { dateDisplay: '14 Jun · 11:40', movementType: MovementType.ISSUE, fromLocation: 'Vault A', toLocation: 'Ramesh Soni', referenceNo: 'BATCH-551', fineWeight: 142.000, createdByName: 'Store' },
+    { dateDisplay: '14 Jun · 10:05', movementType: MovementType.TRANSFER, fromLocation: 'Vault A', toLocation: 'Vault B', referenceNo: 'TRF-220', fineWeight: 520.000, createdByName: 'Store' },
+    { dateDisplay: '13 Jun · 17:30', movementType: MovementType.RETURN, fromLocation: 'Deepak Casting', toLocation: 'Vault A', referenceNo: 'JOB-895', fineWeight: 200.000, createdByName: 'Store' },
+    { dateDisplay: '13 Jun · 14:10', movementType: MovementType.ISSUE, fromLocation: 'Vault A', toLocation: 'Suresh Kumar', referenceNo: 'BATCH-547', fineWeight: 180.000, createdByName: 'Store' },
+    { dateDisplay: '12 Jun · 16:20', movementType: MovementType.DISPATCH, fromLocation: 'Vault B', toLocation: 'Kalyan Silver', referenceNo: 'ORD-2238', fineWeight: 320.000, createdByName: 'Dispatch' },
+    { dateDisplay: '12 Jun · 09:15', movementType: MovementType.RECEIPT, fromLocation: 'Rajwadi Arts', toLocation: 'Vault A', referenceNo: 'ORD-2234', fineWeight: 380.000, createdByName: 'R. Kothari' },
+    { dateDisplay: '11 Jun · 15:50', movementType: MovementType.ISSUE, fromLocation: 'Vault A', toLocation: 'Deepak Casting', referenceNo: 'JOB-879', fineWeight: 300.000, createdByName: 'Store' },
+  ];
+
+  await prisma.materialMovement.deleteMany();
+  for (const m of movementsData) {
+    await prisma.materialMovement.create({ data: m });
   }
 
   console.log('Seeding completed successfully!');
