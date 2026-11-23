@@ -361,6 +361,154 @@ async function main() {
     await prisma.materialMovement.create({ data: m });
   }
 
+  // 13. Dual Ledger Entries
+  await prisma.dualLedgerEntry.deleteMany();
+  const ledgerData = [
+    { dateDisplay: '01 Jun 25', entryType: LedgerType.OPENING, partyName: 'System', referenceNo: '', silverIn: 800.000, silverOut: 0, silverBalance: 800.000, inrIn: 0, inrOut: 0, inrBalance: 0, remarks: 'Opening stock balance' },
+    { dateDisplay: '02 Jun 25', entryType: LedgerType.SILVER_RCVD, partyName: 'Mehta Jewels', referenceNo: 'ORD-2198', silverIn: 500.000, silverOut: 0, silverBalance: 1300.000, inrIn: 0, inrOut: 0, inrBalance: 0, remarks: 'Against ORD-2198' },
+    { dateDisplay: '03 Jun 25', entryType: LedgerType.SILVER_ISSUE, partyName: 'Ramesh Soni', referenceNo: 'BATCH-530', silverIn: 0, silverOut: 142.000, silverBalance: 1158.000, inrIn: 0, inrOut: 0, inrBalance: 0, remarks: 'Payal production' },
+    { dateDisplay: '05 Jun 25', entryType: LedgerType.JOB_OUT, partyName: 'Deepak Casting', referenceNo: 'JOB-879', silverIn: 0, silverOut: 300.000, silverBalance: 858.000, inrIn: 0, inrOut: 0, inrBalance: 0, remarks: 'Casting batch' },
+    { dateDisplay: '07 Jun 25', entryType: LedgerType.DISPATCH, partyName: 'Rajwadi Silver Arts', referenceNo: 'ORD-2234', silverIn: 0, silverOut: 220.000, silverBalance: 638.000, inrIn: 0, inrOut: 0, inrBalance: 0, remarks: 'Final dispatch' },
+    { dateDisplay: '08 Jun 25', entryType: LedgerType.PAYMENT, partyName: 'Mehta Jewels', referenceNo: 'PAY-770', silverIn: 0, silverOut: 0, silverBalance: 638.000, inrIn: 150000.00, inrOut: 0, inrBalance: 150000.00, remarks: 'NEFT payment against ORD-2198' },
+    { dateDisplay: '10 Jun 25', entryType: LedgerType.SILVER_RCVD, partyName: 'Kalyan Silver House', referenceNo: 'ORD-2239', silverIn: 250.000, silverOut: 0, silverBalance: 888.000, inrIn: 0, inrOut: 0, inrBalance: 150000.00, remarks: 'Advance bullion deposit' },
+    { dateDisplay: '12 Jun 25', entryType: LedgerType.PAYMENT, partyName: 'Ramesh Soni', referenceNo: 'WAGE-102', silverIn: 0, silverOut: 0, silverBalance: 888.000, inrIn: 0, inrOut: 18500.00, inrBalance: 131500.00, remarks: 'Fortnightly making labour wage' },
+  ];
+
+  for (const l of ledgerData) {
+    await prisma.dualLedgerEntry.create({ data: l });
+  }
+
+  // 14. Invoices
+  await prisma.invoiceItem.deleteMany();
+  await prisma.invoice.deleteMany();
+
+  const mehtaClient = await prisma.client.findFirst({ where: { clientCode: 'mehta' } });
+  const kalyanClient = await prisma.client.findFirst({ where: { clientCode: 'kalyan' } });
+  const rajwadiClient = await prisma.client.findFirst({ where: { clientCode: 'rajwadi' } });
+  const shreeClient = await prisma.client.findFirst({ where: { clientCode: 'shree' } });
+  const vasupatiClient = await prisma.client.findFirst({ where: { clientCode: 'vasupati' } });
+
+  const ord2241 = await prisma.order.findUnique({ where: { orderNo: 'ORD-2241' } });
+  const ord2238 = await prisma.order.findUnique({ where: { orderNo: 'ORD-2238' } });
+  const ord2234 = await prisma.order.findUnique({ where: { orderNo: 'ORD-2234' } });
+  const ord2233 = await prisma.order.findUnique({ where: { orderNo: 'ORD-2233' } });
+  const ord2232 = await prisma.order.findUnique({ where: { orderNo: 'ORD-2232' } });
+
+  if (mehtaClient && ord2241) {
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: 'INV-1190',
+        orderId: ord2241.id,
+        clientId: mehtaClient.id,
+        invoiceDate: '14 Jun 2025',
+        rateLocked: '₹ 88,900 / kg',
+        subtotal: 131217.00,
+        cgst: 1968.00,
+        sgst: 1968.00,
+        grandTotal: 135153.00,
+        paidAmount: 0.00,
+        outstandingAmount: 135153.00,
+        status: InvoiceStatus.OUTSTANDING,
+        lines: {
+          create: [
+            { description: 'Payal (Anklet) · 24 pc', fineWeight: 779.475, makingCharge: 18051.00, silverValue: 69295.00, lineTotal: 87346.00 },
+            { description: 'Bichiya (Toe Ring) · 50 pc', fineWeight: 399.000, makingCharge: 8400.00, silverValue: 35471.00, lineTotal: 43871.00 },
+          ],
+        },
+      },
+    });
+  }
+
+  if (kalyanClient && ord2238) {
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: 'INV-1187',
+        orderId: ord2238.id,
+        clientId: kalyanClient.id,
+        invoiceDate: '12 Jun 2025',
+        rateLocked: '₹ 88,900 / kg',
+        subtotal: 93204.00,
+        cgst: 1398.00,
+        sgst: 1398.00,
+        grandTotal: 96000.00,
+        paidAmount: 50000.00,
+        outstandingAmount: 46000.00,
+        status: InvoiceStatus.PARTIAL,
+      },
+    });
+  }
+
+  if (rajwadiClient && ord2234) {
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: 'INV-1185',
+        orderId: ord2234.id,
+        clientId: rajwadiClient.id,
+        invoiceDate: '10 Jun 2025',
+        rateLocked: '₹ 88,900 / kg',
+        subtotal: 174757.00,
+        cgst: 2621.00,
+        sgst: 2621.00,
+        grandTotal: 180000.00,
+        paidAmount: 180000.00,
+        outstandingAmount: 0.00,
+        status: InvoiceStatus.PAID,
+      },
+    });
+  }
+
+  if (shreeClient && ord2233) {
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: 'INV-1180',
+        orderId: ord2233.id,
+        clientId: shreeClient.id,
+        invoiceDate: '06 Jun 2025',
+        rateLocked: '₹ 88,900 / kg',
+        subtotal: 497087.00,
+        cgst: 7456.00,
+        sgst: 7456.00,
+        grandTotal: 512000.00,
+        paidAmount: 0.00,
+        outstandingAmount: 512000.00,
+        status: InvoiceStatus.OVERDUE,
+      },
+    });
+  }
+
+  if (vasupatiClient && ord2232) {
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: 'INV-1175',
+        orderId: ord2232.id,
+        clientId: vasupatiClient.id,
+        invoiceDate: '02 Jun 2025',
+        rateLocked: '₹ 88,900 / kg',
+        subtotal: 62136.00,
+        cgst: 932.00,
+        sgst: 932.00,
+        grandTotal: 64000.00,
+        paidAmount: 64000.00,
+        outstandingAmount: 0.00,
+        status: InvoiceStatus.PAID,
+      },
+    });
+  }
+
+  // 15. Expenses
+  await prisma.expense.deleteMany();
+  const expensesData = [
+    { category: 'Karigar & Labour', amount: 420000.00, percentage: 34.00, recordedMonth: 'Jun 2025' },
+    { category: 'Silver Bullion Purchase', amount: 580000.00, percentage: 47.00, recordedMonth: 'Jun 2025' },
+    { category: 'Utilities & Workshop Rent', amount: 85000.00, percentage: 7.00, recordedMonth: 'Jun 2025' },
+    { category: 'Administration & Staff', amount: 98000.00, percentage: 8.00, recordedMonth: 'Jun 2025' },
+    { category: 'Packaging & Courier', amount: 48000.00, percentage: 4.00, recordedMonth: 'Jun 2025' },
+  ];
+
+  for (const exp of expensesData) {
+    await prisma.expense.create({ data: exp });
+  }
+
   console.log('Seeding completed successfully!');
 }
 
