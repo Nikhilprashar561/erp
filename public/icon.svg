@@ -1,69 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SilverSuite favicon">
   <defs>
-    <!-- Background Gradient -->
-    <radialGradient id="bgGrad" cx="50%" cy="40%" r="65%">
-      <stop offset="0%" stop-color="#1A1A1E" />
-      <stop offset="60%" stop-color="#0E0E10" />
-      <stop offset="100%" stop-color="#070708" />
-    </radialGradient>
-
-    <!-- Silver Metallic Gradient for Outer Diamond -->
-    <linearGradient id="silverOuter" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="25%" stop-color="#E2E8ED" />
-      <stop offset="50%" stop-color="#9BA1AB" />
-      <stop offset="75%" stop-color="#F0F2F4" />
-      <stop offset="100%" stop-color="#808691" />
+    <linearGradient id="bg" x1="8" y1="5" x2="57" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#202A33"/>
+      <stop offset="1" stop-color="#0D141B"/>
     </linearGradient>
-
-    <!-- Silver Core Gradient for Inner Diamond -->
-    <linearGradient id="silverInner" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#E8ECF0" />
-      <stop offset="50%" stop-color="#8A9099" />
-      <stop offset="100%" stop-color="#B8BFC8" />
+    <linearGradient id="silver" x1="17" y1="12" x2="48" y2="53" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".28" stop-color="#DCE3E8"/>
+      <stop offset=".58" stop-color="#9EABB5"/>
+      <stop offset=".82" stop-color="#F2F5F7"/>
+      <stop offset="1" stop-color="#AEBBC4"/>
     </linearGradient>
-
-    <!-- Subtle Glow Filter -->
-    <filter id="silverGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="8" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
+    <linearGradient id="edge" x1="18" y1="14" x2="46" y2="51" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#75838E" stop-opacity=".18"/>
+    </linearGradient>
   </defs>
-
-  <!-- Base App Tile with Smooth Rounded Corners -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" stroke="#242428" stroke-width="12" />
-
-  <!-- Outer Silver Geometric Diamond (Rotated 45deg) -->
-  <g transform="translate(256, 256) rotate(45)">
-    <!-- Outer Diamond Bevel/Frame -->
-    <rect
-      x="-136"
-      y="-136"
-      width="272"
-      height="272"
-      rx="24"
-      fill="none"
-      stroke="url(#silverOuter)"
-      stroke-width="28"
-      filter="url(#silverGlow)"
-    />
-
-    <!-- Inner Concentric Silver Ingot Line -->
-    <rect
-      x="-84"
-      y="-84"
-      width="168"
-      height="168"
-      rx="12"
-      fill="none"
-      stroke="url(#silverInner)"
-      stroke-width="16"
-    />
-
-    <!-- Center Fine Silver Precious Core Pip -->
-    <polygon
-      points="0,-36 36,0 0,36 -36,0"
-      fill="url(#silverOuter)"
-    />
-  </g>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#bg)"/>
+  <rect x="2.65" y="2.65" width="58.7" height="58.7" rx="16.35" stroke="#DDE5EA" stroke-opacity=".16" stroke-width="1.3"/>
+  <path d="M44.9 17.5c-3.1-3.1-7.2-4.7-12.5-4.7-9.1 0-15.4 4.8-15.4 12.1 0 6.2 4.1 9.2 13.7 11.1l3.1.6c4.6.9 6.5 2 6.5 4.4 0 2.8-2.8 4.5-7.3 4.5-4.6 0-8.6-1.8-11.9-5.1l-5.3 6.1c4 4.2 10 6.5 17.1 6.5 10.1 0 16.6-4.9 16.6-12.7 0-6.3-4-9.5-13.5-11.4l-3.2-.6c-4.8-1-6.7-2-6.7-4.3 0-2.3 2.4-3.8 6.3-3.8 3.8 0 7.1 1.3 9.9 3.8l2.6-6.5Z" fill="url(#silver)"/>
+  <path d="M19.3 23.8c1.4-4.5 5.9-7.2 12.9-7.2 4.3 0 7.8 1.1 10.5 3.3" fill="none" stroke="url(#edge)" stroke-linecap="round" stroke-width="1.4"/>
+  <path d="M19.8 46.2c3.3 3.2 7.8 4.9 13.2 4.9" fill="none" stroke="#FFFFFF" stroke-opacity=".42" stroke-linecap="round" stroke-width="1.2"/>
+  <circle cx="48.8" cy="14.8" r="2.1" fill="#F4F6F8" fill-opacity=".9"/>
 </svg>
