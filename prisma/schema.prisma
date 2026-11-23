@@ -1,0 +1,466 @@
+// SilverSuite ERP Database Schema
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum OrderStatus {
+  PRODUCTION
+  QC
+  DISPATCHED
+  OVERDUE
+  HOLD
+  COMPLETED
+  RETURNED
+  PARTIAL
+}
+
+enum ProductionStage {
+  MELTING
+  ROD_MAKING
+  CUTTING
+  FORMING
+  POLISHING
+  QC
+  DISPATCH
+}
+
+enum RiskLevel {
+  GREEN
+  AMBER
+  RED
+}
+
+enum LocationType {
+  FACTORY_VAULT
+  KARIGAR
+  JOB_WORKER
+  CLIENT_DISPATCHED
+}
+
+enum MovementType {
+  RECEIPT
+  ISSUE
+  TRANSFER
+  RETURN
+  DISPATCH
+}
+
+enum LedgerType {
+  OPENING
+  SILVER_RCVD
+  SILVER_ISSUE
+  JOB_OUT
+  JOB_IN
+  DISPATCH
+  PAYMENT
+  ADJUSTMENT
+}
+
+enum InvoiceStatus {
+  OUTSTANDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+enum InventoryStatus {
+  IN_STOCK
+  LOW
+  REORDER
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LEAVE
+}
+
+// =======================================================
+// CLUSTER 1: COMPANY & MASTER DATA CONFIGURATION
+// =======================================================
+
+model CompanyProfile {
+  id              String   @id @default(uuid())
+  name            String   @default("Kothari Silver Industries Pvt. Ltd.")
+  proprietor      String   @default("Rakesh Kothari")
+  location        String   @default("Surat, Gujarat")
+  gstNumber       String   @default("24AABCK1234F1Z5")
+  udyamNumber     String   @default("UDYAM-GJ-12-0012345")
+  mcxRateBase     Decimal  @default(89000.00) @db.Decimal(12, 2)
+  autoBills       Boolean  @default(true)
+  twoFactorAuth   Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model MasterCategory {
+  id              String               @id @default(uuid())
+  code            String               @unique // PYL, KAD, CHN, BCH, PND, ANK
+  name            String               // Payal, Kada, Chain, etc.
+  description     String?
+  items           OrderItem[]
+  inventoryItems  InventoryItem[]
+  makingCharges   MasterMakingCharge[]
+  createdAt       DateTime             @default(now())
+}
+
+model MasterPurity {
+  id              String          @id @default(uuid())
+  code            String          @unique // 999, 925, 800, 722
+  standard        String          // 99.9% Fine, 92.5% Sterling
+  useCase         String          // Raw Silver, Jewellery, etc.
+  purityPct       Decimal         @db.Decimal(5, 2)
+  inventory       InventoryItem[]
+}
+
+model MasterMakingCharge {
+  id              String         @id @default(uuid())
+  categoryId      String
+  category        MasterCategory @relation(fields: [categoryId], references: [id])
+  categoryTitle   String         // e.g., "Payal · Filigree"
+  ratePerGram     Decimal        @db.Decimal(10, 2) // ₹ 120 / g
+  minimumCharge   Decimal        @db.Decimal(10, 2) // ₹ 800
+  standardWastage Decimal        @db.Decimal(5, 2)  // 2.5%
+}
+
+model MasterJobType {
+  id              String   @id @default(uuid())
+  jobType         String   @unique // Casting, Polishing, Stone Setting, Plating
+  description     String
+}
+
+// =======================================================
+// CLUSTER 2: PARTIES & DIRECTORIES (CLIENTS, KARIGARS, WORKERS, STAFF)
+// =======================================================
+
+model Client {
+  id                 String            @id @default(uuid())
+  clientCode         String            @unique // mehta, rajwadi, kalyan
+  name               String
+  city               String
+  gstNumber          String
+  initials           String
+  phone              String?
+  email              String?
+  lastActiveDate     String?
+  
+  // Outstanding balances (Live)
+  silverOutstanding  Decimal           @default(0.000) @db.Decimal(12, 3)
+  inrOutstanding     Decimal           @default(0.00)  @db.Decimal(14, 2)
+  
+  // Credit Limits
+  creditSilverLimit  Decimal           @default(1000.000) @db.Decimal(12, 3)
+  creditInrLimit     Decimal           @default(500000.00) @db.Decimal(14, 2)
+  
+  orders             Order[]
+  invoices           Invoice[]
+  ledgerEntries      DualLedgerEntry[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([name])
+  @@index([gstNumber])
+}
+
+model Karigar {
+  id                 String            @id @default(uuid())
+  karigarCode        String            @unique // k1, k2, k3
+  name               String
+  skill              String            // Filigree · Payal, Casting · Mould
+  silverHeld         Decimal           @default(0.000) @db.Decimal(12, 3)
+  piecesCount        Int               @default(0)
+  wastagePct         Decimal           @default(0.00) @db.Decimal(5, 2)
+  wagesPayable       Decimal           @default(0.00) @db.Decimal(14, 2)
+  riskLevel          RiskLevel         @default(GREEN)
+  
+  batches            Batch[]
+  pieces             KarigarPiece[]
+  ledgerEntries      DualLedgerEntry[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model JobWorker {
+  id                 String            @id @default(uuid())
+  workerCode         String            @unique // w1, w2, w3
+  name               String
+  specialty          String            // Polishing · Buffing, Rhodium · Gold Plating
+  silverHeld         Decimal           @default(0.000) @db.Decimal(12, 3)
+  activeJobsCount    Int               @default(0)
+  overdueCount       Int               @default(0)
+  riskLevel          RiskLevel         @default(GREEN)
+  
+  jobs               OutsourceJob[]
+  ledgerEntries      DualLedgerEntry[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model Employee {
+  id                 String             @id @default(uuid())
+  name               String
+  role               String             // Owner · MD, Accounts Head, Store Keeper
+  department         String             // Management, Finance, Production, Warehouse
+  attendance         AttendanceStatus   @default(PRESENT)
+  monthlySalary      Decimal            @default(0.00) @db.Decimal(12, 2)
+  joinedYear         String
+  initials           String
+  authorizedMoves    MaterialMovement[]
+  createdAt          DateTime           @default(now())
+}
+
+// =======================================================
+// CLUSTER 3: ORDERS & MANUFACTURING FLOOR
+// =======================================================
+
+model Order {
+  id                 String            @id @default(uuid())
+  orderNo            String            @unique // ORD-2241
+  clientId           String
+  client             Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  productsSummary    String            // Payal, Bichiya
+  grossWeight        Decimal           @db.Decimal(12, 3)
+  fineWeight         Decimal           @db.Decimal(12, 3)
+  status             OrderStatus       @default(PRODUCTION)
+  dueDate            String            // e.g. "18 Jun"
+  progressPct        Int               @default(0)
+  
+  // Rate Lock & Balance
+  rateLocked         Decimal           @db.Decimal(12, 2) // ₹ 88,900 / kg locked
+  silverOutstanding  Decimal           @default(0.000) @db.Decimal(12, 3)
+  inrOutstanding     Decimal           @default(0.00)  @db.Decimal(14, 2)
+  
+  items              OrderItem[]
+  batches            Batch[]
+  outsourceJobs      OutsourceJob[]
+  karigarPieces      KarigarPiece[]
+  invoices           Invoice[]
+  
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([orderNo])
+  @@index([status])
+  @@index([clientId])
+}
+
+model OrderItem {
+  id                 String          @id @default(uuid())
+  orderId            String
+  order              Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  categoryId         String?
+  category           MasterCategory? @relation(fields: [categoryId], references: [id])
+  name               String          // Payal (Anklet) · 24 pc
+  quantity           Int             @default(1)
+  grossWeight        Decimal         @db.Decimal(12, 3)
+  fineWeight         Decimal         @db.Decimal(12, 3)
+  makingCharge       Decimal         @db.Decimal(12, 2)
+  silverValue        Decimal         @db.Decimal(14, 2)
+  totalAmount        Decimal         @db.Decimal(14, 2)
+}
+
+model Batch {
+  id                 String          @id @default(uuid())
+  batchId            String          @unique // BATCH-551
+  orderId            String
+  order              Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  karigarId          String?
+  karigar            Karigar?        @relation(fields: [karigarId], references: [id])
+  product            String          // Payal
+  weight             Decimal         @db.Decimal(12, 3)
+  stage              ProductionStage @default(MELTING)
+  inStageDuration    String          @default("just now")
+  isDelayed          Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([stage])
+  @@index([batchId])
+}
+
+model KarigarPiece {
+  id                 String      @id @default(uuid())
+  pieceId            String      @unique // PC-4410
+  orderId            String
+  order              Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  karigarId          String
+  karigar            Karigar     @relation(fields: [karigarId], references: [id], onDelete: Restrict)
+  product            String      // Payal
+  weightIssued       Decimal     @db.Decimal(12, 3)
+  expectedFine       Decimal     @db.Decimal(12, 3)
+  dueDate            String
+  status             OrderStatus @default(PRODUCTION)
+  createdAt          DateTime    @default(now())
+}
+
+model OutsourceJob {
+  id                 String      @id @default(uuid())
+  jobId              String      @unique // JOB-901
+  orderId            String
+  order              Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  workerId           String
+  worker             JobWorker   @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  jobType            String      // Casting, Polishing, Moulding
+  weightSent         Decimal     @db.Decimal(12, 3)
+  weightReturned     Decimal     @default(0.000) @db.Decimal(12, 3)
+  dueDate            String
+  status             OrderStatus @default(PRODUCTION)
+  labourCost         Decimal     @db.Decimal(12, 2)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([jobId])
+  @@index([status])
+}
+
+// =======================================================
+// CLUSTER 4: WAREHOUSE, VAULTS & "WHERE IS MY SILVER?"
+// =======================================================
+
+model InventoryItem {
+  id                 String          @id @default(uuid())
+  sku                String          @unique // PYL-925-018
+  categoryId         String
+  category           MasterCategory  @relation(fields: [categoryId], references: [id])
+  purityId           String
+  purity             MasterPurity    @relation(fields: [purityId], references: [id])
+  pieces             Int             @default(0)
+  grossWeight        Decimal         @db.Decimal(12, 3)
+  fineWeight         Decimal         @db.Decimal(12, 3)
+  location           String          // Vault A, Vault B, Display
+  status             InventoryStatus @default(IN_STOCK)
+  updatedAt          DateTime        @updatedAt
+
+  @@index([sku])
+  @@index([location])
+}
+
+model SilverLocation {
+  id                 String       @id @default(uuid())
+  locationType       LocationType // FACTORY_VAULT, KARIGAR, JOB_WORKER, CLIENT_DISPATCHED
+  partyOrVault       String       // "Vault A", "Ramesh Soni"
+  amountHeld         Decimal      @db.Decimal(12, 3)
+  holdingSince       String       // "14 Jun"
+  agingDays          Int          @default(0)
+  updatedAt          DateTime     @updatedAt
+
+  @@index([locationType])
+  @@index([agingDays])
+}
+
+model MaterialMovement {
+  id                 String       @id @default(uuid())
+  timestamp          DateTime     @default(now())
+  dateDisplay        String       // "14 Jun · 12:18"
+  movementType       MovementType // RECEIPT, ISSUE, TRANSFER, RETURN, DISPATCH
+  fromLocation       String       // "Mehta Jewels", "Vault A"
+  toLocation         String       // "Vault A", "Ramesh Soni"
+  referenceNo        String       // ORD-2241, BATCH-551
+  fineWeight         Decimal      @db.Decimal(12, 3)
+  authorizedById     String?
+  authorizedBy       Employee?    @relation(fields: [authorizedById], references: [id])
+  createdByName      String       // Fallback name e.g. "R. Kothari", "Store"
+
+  @@index([movementType])
+  @@index([timestamp])
+}
+
+// =======================================================
+// CLUSTER 5: DUAL-RUNNING LEDGER & BILLING
+// =======================================================
+
+model DualLedgerEntry {
+  id                 String      @id @default(uuid())
+  entryDate          DateTime    @default(now())
+  dateDisplay        String      // "14 Jun 25"
+  entryType          LedgerType
+  partyName          String      // Mehta Jewels, Deepak Casting
+  referenceNo        String      // ORD-2241, INV-1185
+  
+  clientId           String?
+  client             Client?     @relation(fields: [clientId], references: [id])
+  karigarId          String?
+  karigar            Karigar?    @relation(fields: [karigarId], references: [id])
+  workerId           String?
+  worker             JobWorker?  @relation(fields: [workerId], references: [id])
+
+  // Dual Silver Columns
+  silverIn           Decimal     @default(0.000) @db.Decimal(12, 3)
+  silverOut          Decimal     @default(0.000) @db.Decimal(12, 3)
+  silverBalance      Decimal     @db.Decimal(12, 3)
+
+  // Dual INR Columns
+  inrIn              Decimal     @default(0.00)  @db.Decimal(14, 2)
+  inrOut             Decimal     @default(0.00)  @db.Decimal(14, 2)
+  inrBalance         Decimal     @db.Decimal(14, 2)
+
+  remarks            String?
+
+  @@index([entryDate])
+  @@index([partyName])
+}
+
+model Invoice {
+  id                 String        @id @default(uuid())
+  invoiceNo          String        @unique // INV-1190
+  orderId            String
+  order              Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  clientId           String
+  client             Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  invoiceDate        String        // "14 Jun 2025"
+  rateLocked         String        // "₹ 88,900 / kg"
+  
+  subtotal           Decimal       @db.Decimal(14, 2)
+  cgst               Decimal       @db.Decimal(12, 2) // 1.5%
+  sgst               Decimal       @db.Decimal(12, 2) // 1.5%
+  grandTotal         Decimal       @db.Decimal(14, 2)
+  paidAmount         Decimal       @default(0.00) @db.Decimal(14, 2)
+  outstandingAmount  Decimal       @db.Decimal(14, 2)
+  status             InvoiceStatus @default(OUTSTANDING)
+  
+  lines              InvoiceItem[]
+  createdAt          DateTime      @default(now())
+
+  @@index([invoiceNo])
+  @@index([status])
+}
+
+model InvoiceItem {
+  id                 String   @id @default(uuid())
+  invoiceId          String
+  invoice            Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description        String   // Payal (Anklet) · 24 pc
+  fineWeight         Decimal  @db.Decimal(12, 3)
+  makingCharge       Decimal  @db.Decimal(12, 2)
+  silverValue        Decimal  @db.Decimal(14, 2)
+  lineTotal          Decimal  @db.Decimal(14, 2)
+}
+
+// =======================================================
+// CLUSTER 6: EXPENSES & SYSTEM AUDIT LOGS
+// =======================================================
+
+model Expense {
+  id                 String   @id @default(uuid())
+  category           String   // Karigar & Labour, Silver Purchase
+  amount             Decimal  @db.Decimal(14, 2)
+  percentage         Decimal  @db.Decimal(5, 2)
+  recordedMonth      String   // "Jun 2025"
+  createdAt          DateTime @default(now())
+}
+
+model ActivityLog {
+  id                 String   @id @default(uuid())
+  message            String   // "Silver received · Mehta Jewels · 450.000 g"
+  timestamp          DateTime @default(now())
+  timeDisplay        String   // "12:18 PM"
+  tagColor           String   // #4ADE80, #60A5FA
+  referenceNo        String?
+}
