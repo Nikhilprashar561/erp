@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#1A1A1E" />
+      <stop offset="60%" stop-color="#0E0E10" />
+      <stop offset="100%" stop-color="#070708" />
+    </radialGradient>
+
+    <!-- Silver Metallic Gradient for Outer Diamond -->
+    <linearGradient id="silverOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="25%" stop-color="#E2E8ED" />
+      <stop offset="50%" stop-color="#9BA1AB" />
+      <stop offset="75%" stop-color="#F0F2F4" />
+      <stop offset="100%" stop-color="#808691" />
+    </linearGradient>
+
+    <!-- Silver Core Gradient for Inner Diamond -->
+    <linearGradient id="silverInner" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E8ECF0" />
+      <stop offset="50%" stop-color="#8A9099" />
+      <stop offset="100%" stop-color="#B8BFC8" />
+    </linearGradient>
+
+    <!-- Subtle Glow Filter -->
+    <filter id="silverGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Base App Tile with Smooth Rounded Corners -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" stroke="#242428" stroke-width="12" />
+
+  <!-- Outer Silver Geometric Diamond (Rotated 45deg) -->
+  <g transform="translate(256, 256) rotate(45)">
+    <!-- Outer Diamond Bevel/Frame -->
+    <rect
+      x="-136"
+      y="-136"
+      width="272"
+      height="272"
+      rx="24"
+      fill="none"
+      stroke="url(#silverOuter)"
+      stroke-width="28"
+      filter="url(#silverGlow)"
+    />
+
+    <!-- Inner Concentric Silver Ingot Line -->
+    <rect
+      x="-84"
+      y="-84"
+      width="168"
+      height="168"
+      rx="12"
+      fill="none"
+      stroke="url(#silverInner)"
+      stroke-width="16"
+    />
+
+    <!-- Center Fine Silver Precious Core Pip -->
+    <polygon
+      points="0,-36 36,0 0,36 -36,0"
+      fill="url(#silverOuter)"
+    />
+  </g>
+</svg>
